@@ -13,8 +13,8 @@ const Width = 31
 const Height = 21
 
 const (
-	WALL   = "."
-	ROAD   = "#"
+	WALL   = "#"
+	ROAD   = " "
 	START  = "S"
 	FINISH = "F"
 )
@@ -45,6 +45,7 @@ func (m Maze) point(p Point) bool {
 }
 
 func (m Maze) print() {
+	fmt.Print("\x1b[H\x1b[2J") // Clear Screen
 	for y := 0; y < Height; y++ {
 		for x := 0; x < Width; x++ {
 			if m[x][Height-y-1] == true {
@@ -78,11 +79,11 @@ func (m Maze) drawLine(p1, p2 Point) {
 	}
 }
 
-func (m Maze) drawFrame() {
-	m.drawLine(Point{0, 0}, Point{Width - 1, 0})
-	m.drawLine(Point{Width - 1, 0}, Point{Width - 1, Height - 1})
-	m.drawLine(Point{0, 0}, Point{0, Height - 1})
-	m.drawLine(Point{0, Height - 1}, Point{Width - 1, Height - 1})
+func (m Maze) drawFrame(p1, p2 Point) {
+	m.drawLine(Point{p1.x, p1.y}, Point{p2.x, p1.y})
+	m.drawLine(Point{p2.x, p1.y}, Point{p2.x, p2.y})
+	m.drawLine(Point{p2.x, p2.y}, Point{p1.x, p2.y})
+	m.drawLine(Point{p1.x, p2.y}, Point{p1.x, p1.y})
 }
 
 func (m Maze) nextTo(p Point) []Point {
@@ -119,9 +120,13 @@ func (m Maze) canPlot(p Point) bool {
 	}
 }
 
-func (m Maze) plotWallAtRandom() {
+func (m Maze) randomPoint() Point {
 	//p := Point{rand.Intn(int(Width/2)) * 2, rand.Intn(int(Height/2)) * 2}
-	p := Point{rand.Intn(Width), rand.Intn(Height)}
+	return Point{rand.Intn(Width), rand.Intn(Height)}
+}
+
+func (m Maze) plotWallAtRandom() {
+	p := m.randomPoint()
 	if m.canPlot(p) {
 		m.setWall(p)
 	}
@@ -130,8 +135,9 @@ func (m Maze) plotWallAtRandom() {
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	m := NewMaze()
-	m.drawFrame()
-	for i := 1; i < 500; i++ {
+	m.drawFrame(Point{0, 0}, Point{Width - 1, Height - 1})
+	m.drawFrame(m.randomPoint(), m.randomPoint())
+	for i := 1; i < 10; i++ {
 		m.plotWallAtRandom()
 	}
 	m.print()
