@@ -48,7 +48,7 @@ func (m Maze) print() {
 	fmt.Print("\x1b[H\x1b[2J") // Clear Screen
 	for y := 0; y < Height; y++ {
 		for x := 0; x < Width; x++ {
-			if m[x][Height-y-1] == true {
+			if m.point(Point{x, Height - y - 1}) == true {
 				fmt.Printf("%."+strconv.Itoa(x%2+1)+"s", strings.Repeat(WALL, 3))
 			} else {
 				fmt.Printf("%."+strconv.Itoa(x%2+1)+"s", strings.Repeat(ROAD, 3))
@@ -68,11 +68,11 @@ func (m Maze) drawLine(p1, p2 Point) {
 	}
 	if X == x {
 		for i := y; i <= Y; i++ {
-			m[x][i] = true
+			m.setWall(Point{x, i})
 		}
 	} else if Y == y {
 		for i := x; i <= X; i++ {
-			m[i][y] = true
+			m.setWall(Point{i, y})
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "drawLine error\n")
