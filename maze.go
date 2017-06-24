@@ -38,6 +38,12 @@ func NewMaze() Maze {
 
 func (m Maze) setWall(p Point) {
 	m[p.x][p.y] = true
+	//m.print()
+}
+
+func (m Maze) setRoad(p Point) {
+	m[p.x][p.y] = false
+	//m.print()
 }
 
 func (m Maze) point(p Point) bool {
@@ -107,22 +113,27 @@ func (m Maze) nextTo(p Point) []Point {
 }
 
 func (m Maze) canPlot(p Point) bool {
+	if p.x%2 == 1 && p.y%2 == 1 {
+		return false
+	}
 	count := 0
 	for _, n := range m.nextTo(p) {
 		if m.point(n) {
 			count++
 		}
 	}
-	if count < 4 {
+	switch {
+	case count <= 3:
 		return true
-	} else {
+	default:
 		return false
 	}
 }
 
 func (m Maze) randomPoint() Point {
 	//p := Point{rand.Intn(int(Width/2)) * 2, rand.Intn(int(Height/2)) * 2}
-	return Point{rand.Intn(Width), rand.Intn(Height)}
+	//return Point{rand.Intn(Width), rand.Intn(Height)}
+	return Point{rand.Intn(int(Width/2)) * 2, rand.Intn(int(Height/2)) * 2}
 }
 
 func (m Maze) plotWallAtRandom() {
@@ -132,13 +143,70 @@ func (m Maze) plotWallAtRandom() {
 	}
 }
 
+func getPointAtRandom(in []Point) []Point {
+	if len(in) == 1 {
+		return []Point{in[0]}
+	} else {
+		i := rand.Intn(len(in))
+		newList := []Point{}
+		for k, p := range in {
+			if k != i {
+				newList = append(newList, p)
+			}
+		}
+		return append(getPointAtRandom(newList), in[i])
+	}
+}
+
+func (m Maze) getWallCandidate(p Point) []Point {
+	var result []Point
+	var list []Point = []Point{Point{p.x - 1, p.y}, Point{p.x, p.y + 1}, Point{p.x + 1, p.y}, Point{p.x, p.y - 1}}
+	for _, p := range list {
+		if p.x >= 0 && p.x < Width && p.y >= 0 && p.y < Height && m.point(p) == false {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
+func (m Maze) extendWall(p Point) {
+	fmt.Printf("p.x=%v\tp.y=%v\n", p.x, p.y)
+	for _, wc := range getPointAtRandom(m.getWallCandidate(p)) {
+		fmt.Printf("\twc.x=%v\twc.y=%v\n", wc.x, wc.y)
+		if m.canPlot(wc) {
+			m.setWall(wc)
+			m.extendWall(wc)
+		}
+	}
+}
+
+func (m Maze) makeMaze() {
+	m.drawFrame(Point{0, 0}, Point{Width - 1, Height - 1})
+	//var list [(int(Width/2) + int(Height/2)) * 2 - 4 ]Point
+	var list []Point
+	for i := 2; i < Width-1; i += 2 {
+		list = append(list, Point{i, 0})
+		list = append(list, Point{i, Height - 1})
+	}
+	for i := 2; i < Height-1; i += 2 {
+		list = append(list, Point{0, i})
+		list = append(list, Point{Width - 1, i})
+	}
+	//fmt.Printf("len(list)=%v\n", len(list))
+	for _, p := range getPointAtRandom(list) {
+		m.extendWall(p)
+	}
+}
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	m := NewMaze()
-	m.drawFrame(Point{0, 0}, Point{Width - 1, Height - 1})
-	m.drawFrame(m.randomPoint(), m.randomPoint())
-	for i := 1; i < 10; i++ {
-		m.plotWallAtRandom()
-	}
+	/*
+		m.drawFrame(m.randomPoint(), m.randomPoint())
+		for i := 1; i < 10; i++ {
+			m.plotWallAtRandom()
+		}
+	*/
+	m.makeMaze()
 	m.print()
 }
