@@ -10,17 +10,12 @@ import (
 	"time"
 )
 
-//const Width = 51
-//const Height = 31
-
 const (
-	WALL   = "#"
-	ROAD   = " "
+	WALL   = " "
+	ROAD   = "#"
 	START  = "S"
 	FINISH = "F"
 )
-
-//type Maze [Width][Height]bool
 
 type Point struct {
 	x int
@@ -32,12 +27,14 @@ func (p2 Point) opposite(p1 Point) Point {
 }
 
 func getPointAtRandom(in []Point) []Point {
-	if len(in) == 1 {
-		return []Point{in[0]}
+	if len(in) <= 1 {
+		//return []Point{in[0]}
+		return in
 	} else {
 		i := rand.Intn(len(in))
 		newList := []Point{}
 		for k, p := range in {
+			//if k != i && rand.Intn(10) < 8 {
 			if k != i {
 				newList = append(newList, p)
 			}
@@ -46,7 +43,6 @@ func getPointAtRandom(in []Point) []Point {
 	}
 }
 
-//type Maze [][]bool
 type Maze struct {
 	width  int
 	height int
@@ -192,28 +188,31 @@ func (m *Maze) extendWall(p Point) {
 }
 
 func (m *Maze) makeMaze() {
-	m.drawFrame(Point{0, 0}, Point{m.width - 1, m.height - 1})
+	//m.drawFrame(Point{0, 0}, Point{m.width - 1, m.height - 1})
 	var list []Point
-	for i := 2; i < m.width-1; i += 2 {
-		list = append(list, Point{i, 0})
-		list = append(list, Point{i, m.height - 1})
-	}
-	for i := 2; i < m.height-1; i += 2 {
-		list = append(list, Point{0, i})
-		list = append(list, Point{m.width - 1, i})
-	}
+	/*
+		for i := 0; i < m.width; i += 2 {
+			list = append(list, Point{i, 0})
+			list = append(list, Point{i, m.height - 1})
+		}
+		for i := 0; i < m.height; i += 2 {
+			list = append(list, Point{0, i})
+			list = append(list, Point{m.width - 1, i})
+		}
+	*/
+	list = []Point{m.randomPoint()}
 	for _, p := range getPointAtRandom(list) {
 		m.extendWall(p)
 	}
 }
 
 func main() {
-	var width *int = flag.Int("width", 51, "Width of the maze.")
-	var height *int = flag.Int("height", 31, "Height of the maze.")
+	var width *int = flag.Int("width", 30, "Width of the maze.")
+	var height *int = flag.Int("height", 20, "Height of the maze.")
 	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano())
-	m := NewMaze(*width, *height)
+	m := NewMaze(*width*2+1, *height*2+1)
 	m.makeMaze()
 	m.print()
 }
