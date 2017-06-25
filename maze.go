@@ -63,14 +63,14 @@ func NewMaze(w, h int) *Maze {
 	}
 }
 
-func (m *Maze) setWall(p Point) {
+func (m *Maze) setRoad(p Point) {
 	m.data[p.x][p.y] = true
-	//m.print()
+	m.printPoint(p)
 }
 
-func (m *Maze) setRoad(p Point) {
+func (m *Maze) setWall(p Point) {
 	m.data[p.x][p.y] = false
-	//m.print()
+	m.printPoint(p)
 }
 
 func (m *Maze) point(p Point) bool {
@@ -81,18 +81,34 @@ func (m *Maze) point(p Point) bool {
 	}
 }
 
+func (m *Maze) printInit() {
+	fmt.Print("\x1b[H\x1b[2J") // Clear Screen
+}
+
+func (m *Maze) printFinish() {
+	fmt.Printf("\x1b[%v;%vH", m.height+1, 1)
+}
+
 func (m *Maze) print() {
 	fmt.Print("\x1b[H\x1b[2J") // Clear Screen
 	for y := 0; y < m.height; y++ {
 		for x := 0; x < m.width; x++ {
-			if m.point(Point{x, m.height - y - 1}) == true {
-				fmt.Printf("%."+strconv.Itoa(x%2+1)+"s", strings.Repeat(WALL, 3))
-			} else {
-				fmt.Printf("%."+strconv.Itoa(x%2+1)+"s", strings.Repeat(ROAD, 3))
+			sym := WALL
+			if !m.point(Point{x, m.height - y - 1}) {
+				sym = ROAD
 			}
+			fmt.Printf("%."+strconv.Itoa(x%2+1)+"s", strings.Repeat(sym, 3))
 		}
 		fmt.Printf("\n")
 	}
+}
+
+func (m *Maze) printPoint(p Point) {
+	sym := WALL
+	if !m.point(p) {
+		sym = ROAD
+	}
+	fmt.Printf("\x1b[%v;%vH%."+strconv.Itoa(p.x%2+1)+"s", m.height-p.y, p.x/2*3+p.x%2+1, strings.Repeat(sym, 3))
 }
 
 func (m *Maze) drawLine(p1, p2 Point) {
@@ -105,11 +121,11 @@ func (m *Maze) drawLine(p1, p2 Point) {
 	}
 	if X == x {
 		for i := y; i <= Y; i++ {
-			m.setWall(Point{x, i})
+			m.setRoad(Point{x, i})
 		}
 	} else if Y == y {
 		for i := x; i <= X; i++ {
-			m.setWall(Point{i, y})
+			m.setRoad(Point{i, y})
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "drawLine error\n")
@@ -165,7 +181,7 @@ func (m *Maze) randomPoint() Point {
 	return Point{rand.Intn(int(m.width/2)) * 2, rand.Intn(int(m.height/2)) * 2}
 }
 
-func (m *Maze) getWallCandidate(p Point) []Point {
+func (m *Maze) getRoadCandidate(p Point) []Point {
 	var result []Point
 	var list []Point = []Point{Point{p.x - 1, p.y}, Point{p.x, p.y + 1}, Point{p.x + 1, p.y}, Point{p.x, p.y - 1}}
 	for _, p := range list {
@@ -176,13 +192,13 @@ func (m *Maze) getWallCandidate(p Point) []Point {
 	return result
 }
 
-func (m *Maze) extendWall(p Point) {
+func (m *Maze) extendRoad(p Point) {
 	//fmt.Printf("p.x=%v\tp.y=%v\n", p.x, p.y)
-	for _, wc := range getPointAtRandom(m.getWallCandidate(p)) {
+	for _, wc := range getPointAtRandom(m.getRoadCandidate(p)) {
 		//fmt.Printf("\twc.x=%v\twc.y=%v\n", wc.x, wc.y)
 		if m.canPlot(wc) {
-			m.setWall(wc)
-			m.extendWall(wc)
+			m.setRoad(wc)
+			m.extendRoad(wc)
 		}
 	}
 }
@@ -202,7 +218,7 @@ func (m *Maze) makeMaze() {
 	*/
 	list = []Point{m.randomPoint()}
 	for _, p := range getPointAtRandom(list) {
-		m.extendWall(p)
+		m.extendRoad(p)
 	}
 }
 
@@ -213,6 +229,8 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 	m := NewMaze(*width*2+1, *height*2+1)
-	m.makeMaze()
 	m.print()
+	m.makeMaze()
+	//m.print()
+	m.printFinish()
 }
