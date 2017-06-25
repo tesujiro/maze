@@ -47,7 +47,11 @@ func (m Maze) setRoad(p Point) {
 }
 
 func (m Maze) point(p Point) bool {
-	return m[p.x][p.y]
+	if p.x < 0 || p.x >= Width || p.y < 0 || p.y >= Height {
+		return false
+	} else {
+		return m[p.x][p.y]
+	}
 }
 
 func (m Maze) print() {
@@ -112,22 +116,28 @@ func (m Maze) nextTo(p Point) []Point {
 	return plist
 }
 
+func straight(p1, p2, p3 Point) bool {
+	return p2.x == (p1.x+p3.x)/2 && p2.y == (p1.y+p3.y)/2
+}
+
+func opposite(p1, p2 Point) Point {
+	return Point{2*p1.x - p2.x, 2*p1.y - p2.y}
+}
+
 func (m Maze) canPlot(p Point) bool {
 	if p.x%2 == 1 && p.y%2 == 1 {
 		return false
 	}
-	count := 0
+	//fmt.Printf("p.x=%v\tp.y=%v\n", p.x, p.y)
 	for _, n := range m.nextTo(p) {
 		if m.point(n) {
-			count++
+			if m.point(opposite(p, n)) {
+				//fmt.Printf("\topposite false p=%v\tn=%v\topposite(p,n)=%v\n", p, n, opposite(p, n))
+				return false
+			}
 		}
 	}
-	switch {
-	case count <= 3:
-		return true
-	default:
-		return false
-	}
+	return true
 }
 
 func (m Maze) randomPoint() Point {
@@ -170,9 +180,9 @@ func (m Maze) getWallCandidate(p Point) []Point {
 }
 
 func (m Maze) extendWall(p Point) {
-	fmt.Printf("p.x=%v\tp.y=%v\n", p.x, p.y)
+	//fmt.Printf("p.x=%v\tp.y=%v\n", p.x, p.y)
 	for _, wc := range getPointAtRandom(m.getWallCandidate(p)) {
-		fmt.Printf("\twc.x=%v\twc.y=%v\n", wc.x, wc.y)
+		//fmt.Printf("\twc.x=%v\twc.y=%v\n", wc.x, wc.y)
 		if m.canPlot(wc) {
 			m.setWall(wc)
 			m.extendWall(wc)
@@ -192,7 +202,6 @@ func (m Maze) makeMaze() {
 		list = append(list, Point{0, i})
 		list = append(list, Point{Width - 1, i})
 	}
-	//fmt.Printf("len(list)=%v\n", len(list))
 	for _, p := range getPointAtRandom(list) {
 		m.extendWall(p)
 	}
