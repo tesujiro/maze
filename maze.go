@@ -28,13 +28,11 @@ func (p2 Point) opposite(p1 Point) Point {
 
 func getPointAtRandom(in []Point) []Point {
 	if len(in) <= 1 {
-		//return []Point{in[0]}
 		return in
 	} else {
 		i := rand.Intn(len(in))
 		newList := []Point{}
 		for k, p := range in {
-			//if k != i && rand.Intn(10) < 8 {
 			if k != i {
 				newList = append(newList, p)
 			}
@@ -81,25 +79,39 @@ func (m *Maze) point(p Point) bool {
 	}
 }
 
+func (m *Maze) printRoad(x, y int) {
+	sym := ROAD
+	fmt.Printf("\x1b[%v;%vH%."+strconv.Itoa(x%2+1)+"s", y, x+1, strings.Repeat(sym, 3))
+}
+
 func (m *Maze) printInit() {
-	fmt.Print("\x1b[H\x1b[2J") // Clear Screen
+	// Clear Screen
+	fmt.Print("\x1b[H\x1b[2J")
+
 }
 
 func (m *Maze) printFinish() {
-	fmt.Printf("\x1b[%v;%vH", m.height+1, 1)
+	fmt.Printf("\x1b[%v;%vH", m.height+3, 1)
 }
 
 func (m *Maze) print() {
-	fmt.Print("\x1b[H\x1b[2J") // Clear Screen
+	// Clear Screen
+	fmt.Print("\x1b[H\x1b[2J")
+
+	// Print Outer Wall
+	for x := 0; x < m.width/2*3+2; x++ {
+		m.printRoad(x, 0)
+		m.printRoad(x, m.height+2)
+	}
+	for y := 0; y < m.height+2; y++ {
+		m.printRoad(0, y)
+		m.printRoad(m.width/2*3+2, y)
+	}
+
 	for y := 0; y < m.height; y++ {
 		for x := 0; x < m.width; x++ {
-			sym := WALL
-			if !m.point(Point{x, m.height - y - 1}) {
-				sym = ROAD
-			}
-			fmt.Printf("%."+strconv.Itoa(x%2+1)+"s", strings.Repeat(sym, 3))
+			m.printPoint(Point{x, m.height - y - 1})
 		}
-		fmt.Printf("\n")
 	}
 }
 
@@ -108,7 +120,7 @@ func (m *Maze) printPoint(p Point) {
 	if !m.point(p) {
 		sym = ROAD
 	}
-	fmt.Printf("\x1b[%v;%vH%."+strconv.Itoa(p.x%2+1)+"s", m.height-p.y, p.x/2*3+p.x%2+1, strings.Repeat(sym, 3))
+	fmt.Printf("\x1b[%v;%vH%."+strconv.Itoa(p.x%2+1)+"s", m.height-p.y+1, p.x/2*3+p.x%2+2, strings.Repeat(sym, 3))
 }
 
 func (m *Maze) drawLine(p1, p2 Point) {
