@@ -216,18 +216,7 @@ func (m *Maze) extendRoad(p Point) {
 }
 
 func (m *Maze) makeMaze() {
-	//m.drawFrame(Point{0, 0}, Point{m.width - 1, m.height - 1})
 	var list []Point
-	/*
-		for i := 0; i < m.width; i += 2 {
-			list = append(list, Point{i, 0})
-			list = append(list, Point{i, m.height - 1})
-		}
-		for i := 0; i < m.height; i += 2 {
-			list = append(list, Point{0, i})
-			list = append(list, Point{m.width - 1, i})
-		}
-	*/
 	list = []Point{m.randomPoint()}
 	for _, p := range getPointAtRandom(list) {
 		m.extendRoad(p)
