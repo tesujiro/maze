@@ -41,6 +41,11 @@ func getPointAtRandom(in []Point) []Point {
 	}
 }
 
+type Edge struct {
+	p Point
+	q Point
+}
+
 type Maze struct {
 	width  int
 	height int
@@ -223,6 +228,10 @@ func (m *Maze) makeMaze() {
 	}
 }
 
+func (m *Maze) makeGraph() {
+	//
+}
+
 func main() {
 	var width *int = flag.Int("width", 30, "Width of the maze.")
 	var height *int = flag.Int("height", 20, "Height of the maze.")
@@ -233,5 +242,6 @@ func main() {
 	m.print()
 	m.makeMaze()
 	//m.print()
+	m.makeGraph()
 	m.printFinish()
 }
