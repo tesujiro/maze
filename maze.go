@@ -42,8 +42,26 @@ func getPointAtRandom(in []Point) []Point {
 }
 
 type Edge struct {
-	p Point
-	q Point
+	start    Point
+	end      Point
+	p        []Point
+	distance int
+}
+
+type EdgeList struct {
+	e    Edge
+	next []*EdgeList
+}
+
+func (el *EdgeList) _print(indent int) {
+	fmt.Printf("%v%v->%v (distance:%v)(p:%v)\n", strings.Repeat("  ", indent), el.e.start, el.e.end, el.e.distance, el.e.p)
+	for _, e := range el.next {
+		e._print(indent + 1)
+	}
+}
+
+func (el *EdgeList) print() {
+	el._print(0)
 }
 
 type Maze struct {
@@ -66,9 +84,17 @@ func NewMaze(w, h int) *Maze {
 	}
 }
 
+func (m *Maze) isInside(p Point) bool {
+	return p.x >= 0 && p.x < m.width && p.y >= 0 && p.y < m.height
+}
+
 func (m *Maze) setRoad(p Point) {
 	m.data[p.x][p.y] = true
 	m.printPoint(p)
+}
+
+func (m *Maze) isRoad(p Point) bool {
+	return m.data[p.x][p.y]
 }
 
 func (m *Maze) setWall(p Point) {
@@ -202,7 +228,8 @@ func (m *Maze) getRoadCandidate(p Point) []Point {
 	var result []Point
 	var list []Point = []Point{Point{p.x - 1, p.y}, Point{p.x, p.y + 1}, Point{p.x + 1, p.y}, Point{p.x, p.y - 1}}
 	for _, p := range list {
-		if p.x >= 0 && p.x < m.width && p.y >= 0 && p.y < m.height && m.point(p) == false {
+		//if p.x >= 0 && p.x < m.width && p.y >= 0 && p.y < m.height && m.point(p) == false {
+		if m.isInside(p) && !m.isRoad(p) {
 			result = append(result, p)
 		}
 	}
@@ -228,8 +255,53 @@ func (m *Maze) makeMaze() {
 	}
 }
 
+func (m *Maze) getNextRoad(p Point) []Point {
+	var result []Point
+	var list []Point = []Point{Point{p.x - 1, p.y}, Point{p.x, p.y + 1}, Point{p.x + 1, p.y}, Point{p.x, p.y - 1}}
+	for _, p := range list {
+		//if p.x >= 0 && p.x < m.width && p.y >= 0 && p.y < m.height && m.point(p) == false {
+		if m.isInside(p) && m.isRoad(p) {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
+func (m *Maze) extendGraph(prev Point, elist *EdgeList) *EdgeList {
+	current := elist.e.end
+
+	//fmt.Printf("%v->%v\t", prev, current)
+
+	var nextRoads []Point
+	for _, road := range m.getNextRoad(current) {
+		if road != prev || current == prev {
+			nextRoads = append(nextRoads, road)
+		}
+	}
+
+	switch len(nextRoads) {
+	case 0: //End Of Road
+	case 1: //One way to go
+		next := nextRoads[0]
+		edge := Edge{start: elist.e.start, end: next, p: append(elist.e.p, next), distance: elist.e.distance + 1}
+		elist = &EdgeList{e: edge}
+		elist = m.extendGraph(current, elist)
+	default: //Many way to go
+		for _, next := range nextRoads {
+			nel := &EdgeList{e: Edge{start: current, end: next, distance: 0, p: []Point{current, next}}} //Next Edge List
+			elist.next = append(elist.next, m.extendGraph(current, nel))
+		}
+	}
+	return elist
+}
+
 func (m *Maze) makeGraph() {
-	//
+	start := Point{x: 0, y: 0}
+	e := Edge{start: start, end: start, distance: 0, p: []Point{start}}
+	elist := &EdgeList{e: e}
+
+	elist = m.extendGraph(start, elist)
+	elist.print()
 }
 
 func main() {
@@ -239,9 +311,8 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 	m := NewMaze(*width*2+1, *height*2+1)
-	m.print()
+	m.print() // print Init Maze
 	m.makeMaze()
-	//m.print()
-	m.makeGraph()
 	m.printFinish()
+	m.makeGraph()
 }
