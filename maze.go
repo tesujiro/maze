@@ -22,6 +22,10 @@ type Point struct {
 	y int
 }
 
+func (p1 Point) is(p2 Point) bool {
+	return p1.x == p2.x && p1.y == p2.y
+}
+
 func (p2 Point) opposite(p1 Point) Point {
 	return Point{2*p1.x - p2.x, 2*p1.y - p2.y}
 }
@@ -62,6 +66,21 @@ func (el *EdgeList) _print(indent int) {
 
 func (el *EdgeList) print() {
 	el._print(0)
+}
+
+func (el *EdgeList) hasPoint(p Point) bool {
+	if p.is(el.e.start) || p.is(el.e.end) {
+		return true
+	}
+	if len(el.next) == 0 {
+		return p.is(el.e.end)
+	}
+	for _, v := range el.next {
+		if v.hasPoint(p) {
+			return true
+		}
+	}
+	return false
 }
 
 type Maze struct {
@@ -259,7 +278,6 @@ func (m *Maze) getNextRoad(p Point) []Point {
 	var result []Point
 	var list []Point = []Point{Point{p.x - 1, p.y}, Point{p.x, p.y + 1}, Point{p.x + 1, p.y}, Point{p.x, p.y - 1}}
 	for _, p := range list {
-		//if p.x >= 0 && p.x < m.width && p.y >= 0 && p.y < m.height && m.point(p) == false {
 		if m.isInside(p) && m.isRoad(p) {
 			result = append(result, p)
 		}
@@ -267,16 +285,27 @@ func (m *Maze) getNextRoad(p Point) []Point {
 	return result
 }
 
-func (m *Maze) extendGraph(prev Point, elist *EdgeList) *EdgeList {
-	current := elist.e.end
+func (m *Maze) extendGraph(prev Point, elist *EdgeList, startel *EdgeList) *EdgeList {
+	var current Point
+	if elist.e.start.is(elist.e.end) {
+		current = prev
+	} else {
+		current = elist.e.end
+	}
 
-	//fmt.Printf("%v->%v\t", prev, current)
+	fmt.Printf("%v->%v\t len(startel.next)=%v \n", prev, current, len(startel.next))
 
 	var nextRoads []Point
 	for _, road := range m.getNextRoad(current) {
-		if road != prev || current == prev {
+		if (road != prev || current == prev) && !startel.hasPoint(road) {
 			nextRoads = append(nextRoads, road)
 		}
+		/*
+			for _, r := range nextRoads {
+				fmt.Printf("%v,", r)
+			}
+			fmt.Printf("\n")
+		*/
 	}
 
 	switch len(nextRoads) {
@@ -285,11 +314,11 @@ func (m *Maze) extendGraph(prev Point, elist *EdgeList) *EdgeList {
 		next := nextRoads[0]
 		edge := Edge{start: elist.e.start, end: next, p: append(elist.e.p, next), distance: elist.e.distance + 1}
 		elist = &EdgeList{e: edge}
-		elist = m.extendGraph(current, elist)
-	default: //Many way to go
+		elist = m.extendGraph(current, elist, startel)
+	default: //More than one way to go
 		for _, next := range nextRoads {
 			nel := &EdgeList{e: Edge{start: current, end: next, distance: 0, p: []Point{current, next}}} //Next Edge List
-			elist.next = append(elist.next, m.extendGraph(current, nel))
+			elist.next = append(elist.next, m.extendGraph(current, nel, startel))
 		}
 	}
 	return elist
@@ -297,10 +326,11 @@ func (m *Maze) extendGraph(prev Point, elist *EdgeList) *EdgeList {
 
 func (m *Maze) makeGraph() {
 	start := Point{x: 0, y: 0}
-	e := Edge{start: start, end: start, distance: 0, p: []Point{start}}
-	elist := &EdgeList{e: e}
+	//e := Edge{start: start, end: start, distance: 0, p: []Point{start}}
+	//elist := &EdgeList{e: e}
+	elist := &EdgeList{}
 
-	elist = m.extendGraph(start, elist)
+	elist = m.extendGraph(start, elist, elist)
 	elist.print()
 }
 
