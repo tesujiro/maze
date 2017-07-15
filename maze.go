@@ -50,33 +50,38 @@ type Edge struct {
 	end      Point
 	p        []Point
 	distance int
+	next     []*Edge
 }
 
-type EdgeList struct {
-	e    Edge
-	next []*EdgeList
-}
-
-func (el *EdgeList) _print(indent int) {
-	fmt.Printf("%v%v->%v (distance:%v)(p:%v)\n", strings.Repeat("  ", indent), el.e.start, el.e.end, el.e.distance, el.e.p)
-	for _, e := range el.next {
-		e._print(indent + 1)
+func (e *Edge) print(indent int) {
+	fmt.Printf("%v%v->%v (distance:%v)(p:%v)\n", strings.Repeat("  ", indent), e.start, e.end, e.distance, e.p)
+	for _, e := range e.next {
+		e.print(indent + 1)
 	}
 }
 
-func (el *EdgeList) print() {
-	el._print(0)
+func (e *Edge) hasPoint(p Point) bool {
+	for _, ep := range e.p {
+		if p.is(ep) {
+			return true
+		}
+	}
+	return false
 }
 
-func (el *EdgeList) hasPoint(p Point) bool {
-	if p.is(el.e.start) || p.is(el.e.end) {
-		return true
+type Graph struct {
+	edgelist []Edge
+}
+
+func (g *Graph) print() {
+	for _, e := range g.edgelist {
+		e.print(0)
 	}
-	if len(el.next) == 0 {
-		return p.is(el.e.end)
-	}
-	for _, v := range el.next {
-		if v.hasPoint(p) {
+}
+
+func (g *Graph) hasPoint(p Point) bool {
+	for _, e := range g.edgelist {
+		if e.start.is(p) || e.end.is(p) {
 			return true
 		}
 	}
@@ -285,53 +290,43 @@ func (m *Maze) getNextRoad(p Point) []Point {
 	return result
 }
 
-func (m *Maze) extendGraph(prev Point, elist *EdgeList, startel *EdgeList) *EdgeList {
-	var current Point
-	if elist.e.start.is(elist.e.end) {
-		current = prev
-	} else {
-		current = elist.e.end
-	}
-
-	fmt.Printf("%v->%v\t len(startel.next)=%v \n", prev, current, len(startel.next))
+func (m *Maze) extendGraph(cpoint Point, cedge Edge, g *Graph) *Graph {
 
 	var nextRoads []Point
-	for _, road := range m.getNextRoad(current) {
-		if (road != prev || current == prev) && !startel.hasPoint(road) {
+	for _, road := range m.getNextRoad(cpoint) {
+		if !cedge.hasPoint(road) {
 			nextRoads = append(nextRoads, road)
 		}
-		/*
-			for _, r := range nextRoads {
-				fmt.Printf("%v,", r)
-			}
-			fmt.Printf("\n")
-		*/
 	}
 
-	switch len(nextRoads) {
-	case 0: //End Of Road
-	case 1: //One way to go
-		next := nextRoads[0]
-		edge := Edge{start: elist.e.start, end: next, p: append(elist.e.p, next), distance: elist.e.distance + 1}
-		elist = &EdgeList{e: edge}
-		elist = m.extendGraph(current, elist, startel)
-	default: //More than one way to go
+	if len(nextRoads) == 0 || g.hasPoint(cpoint) { //No new way to go
+		if cedge.distance > 0 {
+			g.edgelist = append(g.edgelist, cedge)
+		}
+	} else if len(nextRoads) == 1 || cedge.distance == 0 { //One way to go
+		// Extend Current Edge
 		for _, next := range nextRoads {
-			nel := &EdgeList{e: Edge{start: current, end: next, distance: 0, p: []Point{current, next}}} //Next Edge List
-			elist.next = append(elist.next, m.extendGraph(current, nel, startel))
+			cedge = Edge{start: cedge.start, end: next, p: append(cedge.p, next), distance: cedge.distance + 1}
+			g = m.extendGraph(next, cedge, g)
+		}
+	} else {
+		//
+		g.edgelist = append(g.edgelist, cedge)
+		for _, next := range nextRoads {
+			ne := Edge{start: cpoint, end: next, distance: 1, p: []Point{cpoint, next}} //Next Edge List
+			g = m.extendGraph(next, ne, g)
 		}
 	}
-	return elist
+	return g
 }
 
-func (m *Maze) makeGraph() {
+func (m *Maze) makeGraph() *Graph {
 	start := Point{x: 0, y: 0}
-	//e := Edge{start: start, end: start, distance: 0, p: []Point{start}}
-	//elist := &EdgeList{e: e}
-	elist := &EdgeList{}
+	e := Edge{start: start, end: start, distance: 0, p: []Point{start}} //Next Edge List
+	g := &Graph{}
 
-	elist = m.extendGraph(start, elist, elist)
-	elist.print()
+	g = m.extendGraph(start, e, g)
+	return g
 }
 
 func main() {
@@ -344,5 +339,5 @@ func main() {
 	m.print() // print Init Maze
 	m.makeMaze()
 	m.printFinish()
-	m.makeGraph()
+	m.makeGraph().print()
 }
