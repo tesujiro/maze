@@ -50,14 +50,16 @@ type Edge struct {
 	end      Point
 	p        []Point
 	distance int
-	next     []*Edge
+	//next     []*Edge
 }
 
 func (e *Edge) print(indent int) {
 	fmt.Printf("%v%v->%v (distance:%v)(p:%v)\n", strings.Repeat("  ", indent), e.start, e.end, e.distance, e.p)
-	for _, e := range e.next {
-		e.print(indent + 1)
-	}
+	/*
+		for _, e := range e.next {
+			e.print(indent + 1)
+		}
+	*/
 }
 
 func (e *Edge) hasPoint(p Point) bool {
@@ -70,8 +72,9 @@ func (e *Edge) hasPoint(p Point) bool {
 }
 
 func (e *Edge) nextTo(p Point) bool {
-	nextTo := !p.is(e.p[0]) && (len(e.p) < 2 || !p.is(e.p[len(e.p)-2]))
-	fmt.Printf("p:%v e:%v next:%v\n", p, e, nextTo)
+	//nextTo := !p.is(e.p[0]) && (len(e.p) < 2 || !p.is(e.p[len(e.p)-2]))
+	nextTo := len(e.p) < 2 || (!p.is(e.p[1]) && !p.is(e.p[len(e.p)-2]))
+	//fmt.Printf("p:%v e:%v next:%v\n", p, e, nextTo)
 	return nextTo
 }
 
@@ -160,20 +163,23 @@ func (m *Maze) print() {
 	fmt.Print("\x1b[H\x1b[2J")
 
 	// Print Outer Wall
-	for x := 0; x < m.width/2*3+2; x++ {
+	for x := 0; x < (m.width+1)/2*3; x++ {
 		m.printRoad(x, 0)
 		m.printRoad(x, m.height+2)
 	}
+	//time.Sleep(1 * time.Second)
 	for y := 0; y < m.height+2; y++ {
 		m.printRoad(0, y)
-		m.printRoad(m.width/2*3+2, y)
+		m.printRoad((m.width+1)/2*3-1, y)
 	}
+	//time.Sleep(1 * time.Second)
 
 	for y := 0; y < m.height; y++ {
 		for x := 0; x < m.width; x++ {
 			m.printPoint(Point{x, m.height - y - 1})
 		}
 	}
+	//time.Sleep(1 * time.Second)
 }
 
 func (m *Maze) printPoint(p Point) {
@@ -298,6 +304,12 @@ func (m *Maze) getNextRoad(p Point) []Point {
 
 func (m *Maze) extendGraph(cpoint Point, cedge Edge, g *Graph) *Graph {
 
+	// Loop
+	if g.hasPoint(cpoint) {
+		g.edgelist = append(g.edgelist, cedge)
+		return g
+	}
+
 	var nextRoads []Point
 	for _, road := range m.getNextRoad(cpoint) {
 		if cedge.nextTo(road) {
@@ -305,19 +317,19 @@ func (m *Maze) extendGraph(cpoint Point, cedge Edge, g *Graph) *Graph {
 		}
 	}
 
-	if len(nextRoads) == 0 || g.hasPoint(cpoint) { //No new way to go
-		if cedge.distance > 0 {
-			g.edgelist = append(g.edgelist, cedge)
-		}
-	} else if len(nextRoads) == 1 || cedge.distance == 0 { //One way to go
+	if len(nextRoads) == 1 { //One way to go
 		// Extend Current Edge
 		for _, next := range nextRoads {
 			cedge = Edge{start: cedge.start, end: next, p: append(cedge.p, next), distance: cedge.distance + 1}
 			g = m.extendGraph(next, cedge, g)
 		}
 	} else {
-		//
-		g.edgelist = append(g.edgelist, cedge)
+		// Save Last Edge
+		if cedge.distance > 0 {
+			g.edgelist = append(g.edgelist, cedge)
+		}
+
+		// New Edge
 		for _, next := range nextRoads {
 			ne := Edge{start: cpoint, end: next, distance: 1, p: []Point{cpoint, next}} //Next Edge List
 			g = m.extendGraph(next, ne, g)
