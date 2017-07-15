@@ -97,6 +97,17 @@ func (g *Graph) hasPoint(p Point) bool {
 	return false
 }
 
+func (g *Graph) hasEdge(e Edge) bool {
+	for _, e2 := range g.edgelist {
+		if e2.start.is(e.start) && e2.end.is(e.end) || e2.start.is(e.end) && e2.end.is(e.start) {
+			if e2.hasPoint(e.p[1]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 type Maze struct {
 	width  int
 	height int
@@ -306,7 +317,9 @@ func (m *Maze) extendGraph(cpoint Point, cedge Edge, g *Graph) *Graph {
 
 	// Loop
 	if g.hasPoint(cpoint) {
-		g.edgelist = append(g.edgelist, cedge)
+		if !g.hasEdge(cedge) {
+			g.edgelist = append(g.edgelist, cedge)
+		}
 		return g
 	}
 
