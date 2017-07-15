@@ -69,6 +69,12 @@ func (e *Edge) hasPoint(p Point) bool {
 	return false
 }
 
+func (e *Edge) nextTo(p Point) bool {
+	nextTo := !p.is(e.p[0]) && (len(e.p) < 2 || !p.is(e.p[len(e.p)-2]))
+	fmt.Printf("p:%v e:%v next:%v\n", p, e, nextTo)
+	return nextTo
+}
+
 type Graph struct {
 	edgelist []Edge
 }
@@ -294,7 +300,7 @@ func (m *Maze) extendGraph(cpoint Point, cedge Edge, g *Graph) *Graph {
 
 	var nextRoads []Point
 	for _, road := range m.getNextRoad(cpoint) {
-		if !cedge.hasPoint(road) {
+		if cedge.nextTo(road) {
 			nextRoads = append(nextRoads, road)
 		}
 	}
