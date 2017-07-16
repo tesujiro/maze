@@ -72,9 +72,7 @@ func (e *Edge) hasPoint(p Point) bool {
 }
 
 func (e *Edge) nextTo(p Point) bool {
-	//nextTo := !p.is(e.p[0]) && (len(e.p) < 2 || !p.is(e.p[len(e.p)-2]))
 	nextTo := len(e.p) < 2 || (!p.is(e.p[1]) && !p.is(e.p[len(e.p)-2]))
-	//fmt.Printf("p:%v e:%v next:%v\n", p, e, nextTo)
 	return nextTo
 }
 
@@ -360,6 +358,22 @@ func (m *Maze) makeGraph() *Graph {
 	return g
 }
 
+const (
+	White = iota
+	Gray
+	Black
+)
+
+//func (g *Graph) depthFirstSearch(s Point)
+func (g *Graph) dijkstraSearch(s Point) {
+	//PQ := map[Point] int
+}
+
+func (g *Graph) makeRoute(start Point, end Point) {
+	//for _, e := range g.searchEdge(start) {
+	//}
+}
+
 func main() {
 	var width *int = flag.Int("width", 30, "Width of the maze.")
 	var height *int = flag.Int("height", 20, "Height of the maze.")
@@ -370,5 +384,9 @@ func main() {
 	m.print() // print Init Maze
 	m.makeMaze()
 	m.printFinish()
-	m.makeGraph().print()
+	g := m.makeGraph()
+	g.print()
+	start := Point{x: 0, y: 0}
+	end := Point{x: m.width - 1, y: m.height - 1}
+	g.makeRoute(start, end)
 }
