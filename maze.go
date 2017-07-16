@@ -77,7 +77,8 @@ func (e *Edge) nextTo(p Point) bool {
 }
 
 type Graph struct {
-	edgelist []Edge
+	edgelist   []Edge
+	vertexlist []Point
 }
 
 func (g *Graph) print() {
@@ -86,9 +87,18 @@ func (g *Graph) print() {
 	}
 }
 
-func (g *Graph) hasPoint(p Point) bool {
-	for _, e := range g.edgelist {
-		if e.start.is(p) || e.end.is(p) {
+func (g *Graph) addVertex(p Point) {
+	g.vertexlist = append(g.vertexlist, p)
+	//fmt.Printf("addVertext :%v\n", p)
+}
+
+func (g *Graph) addEdge(e Edge) {
+	g.edgelist = append(g.edgelist, e)
+}
+
+func (g *Graph) hasVertex(p Point) bool {
+	for _, v := range g.vertexlist {
+		if v.is(p) {
 			return true
 		}
 	}
@@ -314,9 +324,10 @@ func (m *Maze) getNextRoad(p Point) []Point {
 func (m *Maze) extendGraph(cpoint Point, cedge Edge, g *Graph) *Graph {
 
 	// Loop
-	if g.hasPoint(cpoint) {
+	if g.hasVertex(cpoint) {
 		if !g.hasEdge(cedge) {
-			g.edgelist = append(g.edgelist, cedge)
+			//g.edgelist = append(g.edgelist, cedge)
+			g.addEdge(cedge)
 		}
 		return g
 	}
@@ -337,7 +348,9 @@ func (m *Maze) extendGraph(cpoint Point, cedge Edge, g *Graph) *Graph {
 	} else {
 		// Save Last Edge
 		if cedge.distance > 0 {
-			g.edgelist = append(g.edgelist, cedge)
+			g.addVertex(cpoint)
+			//g.edgelist = append(g.edgelist, cedge)
+			g.addEdge(cedge)
 		}
 
 		// New Edge
@@ -355,6 +368,7 @@ func (m *Maze) makeGraph() *Graph {
 	g := &Graph{}
 
 	g = m.extendGraph(start, e, g)
+	g.addVertex(start)
 	return g
 }
 
