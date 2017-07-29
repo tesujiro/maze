@@ -379,26 +379,69 @@ const (
 	Black
 )
 
+//func (g *Graph) dearch(black, gray []Point) {
+//}
+
 //func (g *Graph) depthFirstSearch(s Point)
 func (g *Graph) dijkstraSearch(s Point) {
-	PQ := []Point{}
+	//PQ := []Point{}
 	dist := make(map[Point]int)
-	HIGH := math.Pow(2, 31) - 1
+	HIGH := int(math.Pow(2, 31) - 1)
 
 	for _, v := range g.vertexlist {
 		dist[v] = HIGH
 	}
 
-	for _, v := range g.vertexlist {
-		PQ = append(PQ, v)
+	//for _, v := range g.vertexlist {
+	//PQ = append(PQ, v)
+	//}
+
+	BlackList := []Point{}
+	dist[s] = 0
+	GrayList := []Point{s}
+
+	for len(GrayList) > 0 {
+		// Search Shortest
+		shortest := GrayList[0]
+		for _, v := range GrayList {
+			if dist[v] < dist[shortest] {
+				shortest = v
+			}
+		}
+
+		// Add Shortest V to BlackList
+		BlackList = append(BlackList, shortest)
+		fmt.Printf("dist[%v] => %v\n", shortest, dist[shortest])
+
+		// Remov Shortest V from GrayList
+		newGrayList := []Point{}
+		for _, v := range GrayList {
+			if !v.is(shortest) {
+				newGrayList = append(newGrayList, v)
+			}
+		}
+		GrayList = newGrayList
+
+		//
+		for _, e := range g.edgelist {
+			if e.start.is(shortest) {
+				GrayList = append(GrayList, e.end)
+				if dist[e.end] < dist[e.start]+e.distance {
+					dist[e.end] = dist[e.start] + e.distance
+				}
+			}
+		}
 	}
 
-}
-
-func (g *Graph) makeRoute(start Point, end Point) {
-	//for _, e := range g.searchEdge(start) {
+	//for _, v := range g.vertexlist {
+	//fmt.Printf("dist[%v] => %v\n", v, dist[v])
 	//}
 }
+
+//func (g *Graph) makeRoute(start Point, end Point) {
+//for _, e := range g.searchEdge(start) {
+//}
+//}
 
 func main() {
 	var width *int = flag.Int("width", 30, "Width of the maze.")
@@ -413,6 +456,7 @@ func main() {
 	g := m.makeGraph()
 	g.print()
 	start := Point{x: 0, y: 0}
-	end := Point{x: m.width - 1, y: m.height - 1}
-	g.makeRoute(start, end)
+	//end := Point{x: m.width - 1, y: m.height - 1}
+	//g.makeRoute(start, end)
+	g.dijkstraSearch(start)
 }
