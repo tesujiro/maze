@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
@@ -380,7 +381,18 @@ const (
 
 //func (g *Graph) depthFirstSearch(s Point)
 func (g *Graph) dijkstraSearch(s Point) {
-	//PQ := map[Point] int
+	PQ := []Point{}
+	dist := make(map[Point]int)
+	HIGH := math.Pow(2, 31) - 1
+
+	for _, v := range g.vertexlist {
+		dist[v] = HIGH
+	}
+
+	for _, v := range g.vertexlist {
+		PQ = append(PQ, v)
+	}
+
 }
 
 func (g *Graph) makeRoute(start Point, end Point) {
